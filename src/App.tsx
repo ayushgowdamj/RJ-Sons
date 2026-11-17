@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import FabricStudio from "./FabricStudio"
+import useShowcaseMotion from "./useShowcaseMotion"
 
 type IconName = "arrow" | "search" | "close" | "menu" | "plus" | "check" | "thread" | "diamond" | "flower"
 interface IconProps {
@@ -68,7 +70,7 @@ const imageFiles: Record<string, string> = {
 }
 const photo = (id: string) => `/images/${imageFiles[id]}.jpg`
 const heroImage = photo("photo-1610030469983-98e550d6193c")
-type Category = "All sarees" | "Pure silk" | "Crepe" | "Plain & timeless"
+type Category = "All collections" | "Pure silk" | "Crepe" | "Plain & timeless" | "Dhotis"
 type Product = {
   id: number
   name: string
@@ -77,6 +79,7 @@ type Product = {
   image: string
   tag: string
   swatches: string[]
+  description?: string
 }
 const products: Product[] = [
   {
@@ -115,6 +118,46 @@ const products: Product[] = [
     tag: "LESS, BUT LOVELIER",
     swatches: ["#e5e1d2", "#3d5d4b", "#b77c75"],
   },
+  {
+    id: 5,
+    name: "The Heritage Dhoti",
+    category: "Dhotis",
+    color: "Classic white · Forest border",
+    image: "/images/dhoti-heritage.jpg",
+    tag: "A NEW CHAPTER",
+    swatches: ["#eeeadc", "#315448", "#aa8c50"],
+    description:
+      "The quiet confidence of a traditional dhoti. Explore clean whites, considered borders, and a drape that feels right for family gatherings, festive mornings, and meaningful ceremonies.",
+  },
+  {
+    id: 6,
+    name: "The Everyday Veshti",
+    category: "Dhotis",
+    color: "Soft white · Heritage green",
+    image: "/images/dhoti-everyday.jpg",
+    tag: "ROOTED IN TRADITION",
+    swatches: ["#f0ecdf", "#3d5d4b", "#b5a57a"],
+    description:
+      "An everyday expression of heritage. Discuss the fabric feel, border width, and dimensions you prefer, whether for your own wardrobe or a retail manufacturing requirement.",
+  },
+  {
+    id: 7,
+    name: "The Gulabi Drape",
+    category: "Plain & timeless",
+    color: "Petal pink · Soft ivory",
+    image: "/images/rose.jpg",
+    tag: "THE SOFTER SIDE",
+    swatches: ["#c9859b", "#eee6d8", "#ae9876"],
+  },
+  {
+    id: 8,
+    name: "The Garden Muse",
+    category: "Crepe",
+    color: "Meadow florals · Rose",
+    image: "/images/floral.jpg",
+    tag: "PATTERNS WITH PERSONALITY",
+    swatches: ["#bb7185", "#e3bc88", "#78815c"],
+  },
 ]
 const categories: {
   name: Category
@@ -139,6 +182,12 @@ const categories: {
     title: "Simply extraordinary",
     subtitle: "Understated. Never unnoticed.",
     image: photo("photo-1609748340041-f5d61e061ebc"),
+  },
+  {
+    name: "Dhotis",
+    title: "The dhoti chapter",
+    subtitle: "Heritage, in its purest form.",
+    image: "/images/dhoti-everyday.jpg",
   },
 ]
 type Panel = "search" | "custom" | null
@@ -231,19 +280,24 @@ function Modal({
 }
 
 function App() {
+  useShowcaseMotion()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [category, setCategory] = useState<Category>("All sarees")
+  const [category, setCategory] = useState<Category>("All collections")
   const [panel, setPanel] = useState<Panel>(null)
   const [selected, setSelected] = useState<Product | null>(null)
   const [query, setQuery] = useState("")
   const [briefReady, setBriefReady] = useState(false)
+  const [zoomed, setZoomed] = useState(false)
+  const [briefGarment, setBriefGarment] = useState("Saree")
+  const [ribbonPaused, setRibbonPaused] = useState(false)
   const closeRef = useRef(() => {
     setPanel(null)
     setSelected(null)
+    setZoomed(false)
   })
   const close = closeRef.current
   const filtered = products.filter(
-    (p) => category === "All sarees" || p.category === category,
+    (p) => category === "All collections" || p.category === category,
   )
   const searchResults = products.filter((p) =>
     `${p.name} ${p.category} ${p.color}`
@@ -264,13 +318,18 @@ function App() {
     )
     document.querySelectorAll(".reveal").forEach((el) => observer.observe(el))
     return () => observer.disconnect()
-  }, [])
+  }, [category])
+  useEffect(() => {
+    setZoomed(false)
+  }, [selected])
   const explore = (value: Category) => {
     setCategory(value)
     setMenuOpen(false)
-    document
-      .getElementById("favourites")
-      ?.scrollIntoView({ behavior: "smooth" })
+    document.getElementById("favourites")?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    })
   }
   const download = (text: string, filename: string) => {
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }))
@@ -317,6 +376,9 @@ function App() {
             <button onClick={() => explore("Plain & timeless")}>
               Plain sarees
             </button>
+            <a href="#dhotis" onClick={() => setMenuOpen(false)}>
+              Dhotis <span className="nav-new">NEW</span>
+            </a>
             <a href="#custom" onClick={() => setMenuOpen(false)}>
               Custom designs
             </a>
@@ -327,7 +389,7 @@ function App() {
           <div className="header-actions">
             <button
               className="icon-button"
-              aria-label="Search sarees"
+              aria-label="Search collections"
               onClick={() => setPanel("search")}
             >
               <Icon name="search" />
@@ -351,7 +413,7 @@ function App() {
                 <em>story.</em>
               </h1>
               <p>
-                Exquisite silks. Effortless crepes. Endless possibilities.
+                Exquisite sarees. Timeless dhotis. Endless possibilities.
                 <br className="desktop-break" /> Sarees made to be a part of
                 your story.
               </p>
@@ -428,6 +490,34 @@ function App() {
           </a>
         </div>
 
+        <div className="heritage-ribbon" aria-label="Our fabric world">
+          <div
+            className="ribbon-track"
+            aria-hidden="true"
+            style={{ animationPlayState: ribbonPaused ? "paused" : undefined }}
+          >
+            {[0, 1].map((n) => (
+              <span className="ribbon-set" key={n}>
+                PURE SILK <Icon name="flower" size={16} /> FLOWING CREPE{" "}
+                <Icon name="flower" size={16} /> TIMELESS DHOTIS{" "}
+                <Icon name="flower" size={16} /> CUSTOM CREATIONS{" "}
+                <Icon name="flower" size={16} /> WOVEN WITH CARE{" "}
+                <Icon name="flower" size={16} />
+              </span>
+            ))}
+          </div>
+          <button
+            className="ribbon-pause"
+            aria-label={
+              ribbonPaused ? "Play fabric ribbon" : "Pause fabric ribbon"
+            }
+            aria-pressed={ribbonPaused}
+            onClick={() => setRibbonPaused(!ribbonPaused)}
+          >
+            {ribbonPaused ? "▷" : "Ⅱ"}
+          </button>
+        </div>
+
         <section className="section collections" id="collections">
           <div className="section-heading reveal">
             <div>
@@ -439,9 +529,9 @@ function App() {
             <a
               className="text-link"
               href="#favourites"
-              onClick={() => setCategory("All sarees")}
+              onClick={() => setCategory("All collections")}
             >
-              Explore all sarees <Icon name="arrow" size={18} />
+              Explore all collections <Icon name="arrow" size={18} />
             </a>
           </div>
           <div className="collection-grid">
@@ -453,7 +543,11 @@ function App() {
               >
                 <img
                   src={item.image}
-                  alt={`Woman wearing a saree from our ${item.name.toLowerCase()} inspiration edit`}
+                  alt={
+                    item.name === "Dhotis"
+                      ? "Man wearing a traditional white dhoti with a green border"
+                      : `Woman wearing a saree from our ${item.name.toLowerCase()} inspiration edit`
+                  }
                   loading="lazy"
                 />
                 <span className="collection-shade" />
@@ -474,6 +568,79 @@ function App() {
           </div>
         </section>
 
+        <section
+          className="dhoti-feature"
+          id="dhotis"
+          aria-labelledby="dhoti-title"
+        >
+          <div className="dhoti-copy reveal reveal--left">
+            <span className="eyebrow">INTRODUCING THE DHOTI COLLECTION</span>
+            <h2 id="dhoti-title">
+              Some traditions
+              <br />
+              never go <em>out of style.</em>
+            </h2>
+            <p>
+              For the festive morning. The family photograph. The everyday
+              ritual. Our dhoti manufacturing brings the same love of fabric and
+              finishing to a different kind of drape.
+            </p>
+            <div className="dhoti-details">
+              <div>
+                <span>01</span>
+                <p>
+                  <strong>Classic whites &amp; ivory tones</strong>
+                  <small>A clean, considered canvas for your style.</small>
+                </p>
+              </div>
+              <div>
+                <span>02</span>
+                <p>
+                  <strong>Borders with character</strong>
+                  <small>Discuss understated edges or a festive accent.</small>
+                </p>
+              </div>
+              <div>
+                <span>03</span>
+                <p>
+                  <strong>Made around your requirements</strong>
+                  <small>
+                    Fabric, dimensions, and retail manufacturing enquiries.
+                  </small>
+                </p>
+              </div>
+            </div>
+            <button
+              className="button button--ivory"
+              onClick={() => explore("Dhotis")}
+            >
+              Explore our dhotis <Icon name="arrow" size={18} />
+            </button>
+          </div>
+          <button
+            className="dhoti-portrait reveal reveal--right"
+            aria-label="Discover the Everyday Veshti"
+            onClick={() => setSelected(products[5])}
+          >
+            <img
+              src="/images/dhoti-everyday.jpg"
+              alt="Traditional white dhoti with a forest-green border, styled with a white shirt"
+              loading="lazy"
+            />
+            <span className="dhoti-portrait-label">
+              <span>
+                THE HERITAGE EDIT<small>Simple. Rooted. Remarkable.</small>
+              </span>
+              <span className="round-arrow">
+                <Icon name="arrow" />
+              </span>
+            </span>
+          </button>
+          <span className="dhoti-watermark" aria-hidden="true">
+            Heritage
+          </span>
+        </section>
+
         <section className="section favourites" id="favourites">
           <div className="section-heading reveal">
             <div>
@@ -488,10 +655,11 @@ function App() {
           </div>
           <div className="collection-tabs" aria-label="Filter collection">
             {([
-              "All sarees",
+              "All collections",
               "Pure silk",
               "Crepe",
               "Plain & timeless",
+              "Dhotis",
             ] as Category[]).map((item) => (
               <button
                 key={item}
@@ -504,7 +672,7 @@ function App() {
             ))}
             <span>{filtered.length} pieces to fall for</span>
           </div>
-          <div className="product-grid">
+          <div className="product-grid" key={category}>
             {filtered.map((p) => (
               <article className="product-card" key={p.id}>
                 <div className="product-image">
@@ -515,7 +683,9 @@ function App() {
                   >
                     <img
                       src={p.image}
-                      alt={`${p.name}, ${p.color.toLowerCase()} saree inspiration`}
+                      alt={`${p.name}, ${p.color.toLowerCase()} ${
+                        p.category === "Dhotis" ? "dhoti" : "saree"
+                      } inspiration`}
                       loading="lazy"
                     />
                   </button>
@@ -548,10 +718,112 @@ function App() {
             ))}
           </div>
           <p className="collection-footnote">
-            A showcase of saree styles and fabric possibilities. Photography is
-            for inspiration; colours, patterns, and finishes can be discussed
-            for your design.
+            A showcase of saree and dhoti styles and fabric possibilities.
+            Photography is for inspiration; colours, patterns, and finishes can
+            be discussed for your design.
           </p>
+        </section>
+
+        <FabricStudio />
+
+        <section
+          className="craft-section section"
+          id="craft"
+          aria-labelledby="craft-title"
+        >
+          <div className="section-heading reveal">
+            <div>
+              <span className="eyebrow">BEAUTY IS IN THE MAKING</span>
+              <h2 id="craft-title">
+                From a single thread
+                <br />
+                to <em>something meaningful.</em>
+              </h2>
+            </div>
+            <p className="craft-intro">
+              A closer look at the choices behind a beautiful drape. Every
+              conversation starts with how you want the fabric to look, feel,
+              and move.
+            </p>
+          </div>
+          <div className="craft-grid">
+            <div className="craft-visual reveal reveal--left">
+              <img
+                src="/images/loom.jpg"
+                alt="A textile artisan working at a weaving loom"
+                loading="lazy"
+              />
+              <span>
+                THE WORLD OF TEXTILE CRAFT<small>Editorial inspiration</small>
+              </span>
+            </div>
+            <div className="craft-steps">
+              {[
+                [
+                  "Begin with the feeling",
+                  "Light and flowing, rich and festive, or soft and understated. We help you explore the fabric direction for your saree or dhoti.",
+                ],
+                [
+                  "Find the colour story",
+                  "From confident jewel tones to quiet neutrals, consider the palette, pattern, and border together—not in isolation.",
+                ],
+                [
+                  "Consider every detail",
+                  "Discuss fabric selection, design direction, dimensions, and finishing. Small decisions make a drape feel personal.",
+                ],
+                [
+                  "Create for your world",
+                  "An individual design or a retail manufacturing enquiry: share the occasion, quantity, and timeline in your design brief.",
+                ],
+              ].map(([title, text], index) => (
+                <article
+                  className="craft-step reveal reveal--right"
+                  key={title}
+                >
+                  <span>0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </div>
+                  <Icon
+                    name={
+                      index === 0
+                        ? "thread"
+                        : index === 1
+                          ? "flower"
+                          : index === 2
+                            ? "diamond"
+                            : "check"
+                    }
+                    size={23}
+                  />
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="detail-strip reveal">
+            <img
+              src="/images/weave-detail.jpg"
+              alt="Coloured yarn and woven fabric on a traditional wooden loom"
+              loading="lazy"
+            />
+            <div>
+              <span className="eyebrow">SAREES · DHOTIS · CUSTOM DESIGNS</span>
+              <h3>
+                Different drapes.
+                <br />
+                <em>The same attention to detail.</em>
+              </h3>
+              <p>
+                Pure silk, crepe, chiffon, satin, georgette, and dhoti fabric
+                options. Tell us what you have in mind; let&apos;s explore what
+                can be made.
+              </p>
+              <a className="text-link" href="#custom">
+                Start with your idea <Icon name="arrow" size={17} />
+              </a>
+            </div>
+          </div>
         </section>
 
         <section className="custom-section" id="custom">
@@ -566,15 +838,18 @@ function App() {
             </span>
           </div>
           <div className="custom-copy reveal">
-            <span className="eyebrow">NOT JUST A SAREE. YOUR SAREE.</span>
+            <span className="eyebrow">
+              SAREES OR DHOTIS. BEAUTIFULLY PERSONAL.
+            </span>
             <h2>
               You dream it.
               <br />
               We <em>weave</em> it.
             </h2>
             <p>
-              A colour you can&apos;t forget. A pattern that feels like you.
-              Let&apos;s bring it to life, one beautiful thread at a time.
+              A colour you can&apos;t forget. A pattern that feels like you. A
+              dhoti with just the right border. Let&apos;s bring it to life, one
+              beautiful thread at a time.
             </p>
             <div className="custom-options">
               <span>
@@ -632,6 +907,10 @@ function App() {
               every drape. Patterned or plain. A celebration or an ordinary day
               made special. There&apos;s a little of us, woven into every piece.
             </p>
+            <p>
+              And now, the same care extends to dhotis: timeless drapes that
+              honour tradition while feeling completely at home today.
+            </p>
             <span className="story-signature">
               Made with care. Worn with love.
             </span>
@@ -670,11 +949,13 @@ function App() {
             <button onClick={() => explore("Plain & timeless")}>
               Plain sarees
             </button>
+            <button onClick={() => explore("Dhotis")}>Dhotis</button>
             <a href="#custom">Custom designs</a>
           </div>
           <div className="footer-group">
             <h3>THE RJ SONS WORLD</h3>
             <a href="#story">Our story</a>
+            <a href="#craft">The making of a drape</a>
             <a href="#custom">Made for you</a>
             <button
               onClick={() => {
@@ -714,24 +995,81 @@ function App() {
 
       {selected && (
         <Modal title="A closer look" close={close} wide>
-          <div className="product-detail">
-            <img
-              src={selected.image}
-              alt={`${selected.name} saree inspiration`}
-            />
+          <div className="preview-controls">
+            <span>
+              THE {selected.category === "Dhotis" ? "DHOTI" : "SAREE"} EDIT ·{" "}
+              {String(products.indexOf(selected) + 1).padStart(2, "0")} /{" "}
+              {String(products.length).padStart(2, "0")}
+            </span>
+            <div>
+              <button
+                aria-label="Previous design"
+                onClick={() =>
+                  setSelected(
+                    products[
+                      (products.indexOf(selected) - 1 + products.length) %
+                        products.length
+                    ],
+                  )
+                }
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+              <button
+                aria-label="Next design"
+                onClick={() =>
+                  setSelected(
+                    products[
+                      (products.indexOf(selected) + 1) % products.length
+                    ],
+                  )
+                }
+              >
+                <Icon name="arrow" size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="product-detail" key={selected.id}>
+            <button
+              className={`detail-photo ${zoomed ? "detail-photo--zoomed" : ""}`}
+              aria-label={zoomed ? "Zoom out of design" : "Zoom into design"}
+              aria-pressed={zoomed}
+              onClick={() => setZoomed(!zoomed)}
+            >
+              <img
+                src={selected.image}
+                alt={`${selected.name} ${
+                  selected.category === "Dhotis" ? "dhoti" : "saree"
+                } inspiration`}
+              />
+              <span>
+                {zoomed ? "−" : "+"}{" "}
+                <span>
+                  {zoomed ? "Zoom out" : "Click to discover the details"}
+                </span>
+              </span>
+            </button>
             <div className="detail-copy">
               <span className="eyebrow">{selected.category}</span>
               <h3>{selected.name}</h3>
               <p>{selected.color}</p>
               <p>
-                A thoughtfully curated drape, with beautiful movement and a
-                palette made for memorable moments. Let this be the starting
-                point for your perfect saree.
+                {selected.description || (
+                  <>
+                    A thoughtfully curated drape, with beautiful movement and a
+                    palette made for memorable moments. Let this be the starting
+                    point for your perfect saree.
+                  </>
+                )}
               </p>
               <dl>
                 <div>
                   <dt>Length</dt>
-                  <dd>Standard 5.5 m saree + blouse fabric</dd>
+                  <dd>
+                    {selected.category === "Dhotis"
+                      ? "Dimensions discussed to suit your drape"
+                      : "Standard 5.5 m saree + blouse fabric"}
+                  </dd>
                 </div>
                 <div>
                   <dt>Finish</dt>
@@ -747,6 +1085,9 @@ function App() {
                 onClick={() => {
                   setSelected(null)
                   setBriefReady(false)
+                  setBriefGarment(
+                    selected.category === "Dhotis" ? "Dhoti" : "Saree",
+                  )
                   setPanel("custom")
                 }}
               >
@@ -766,7 +1107,7 @@ function App() {
           title={
             panel === "search"
               ? "Find your perfect drape"
-              : "Your saree. Your story."
+              : "Your drape. Your story."
           }
           close={close}
           wide={panel === "custom"}
@@ -779,7 +1120,7 @@ function App() {
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Try silk, crepe, ivory..."
+                  placeholder="Try dhoti, silk, crepe, ivory..."
                   aria-label="Search collection"
                 />
               </label>
@@ -813,7 +1154,7 @@ function App() {
                 <div className="empty-state">
                   <Icon name="search" size={34} />
                   <h3>No drapes found just yet.</h3>
-                  <p>Try “silk”, “crepe”, or a colour like “ivory”.</p>
+                  <p>Try “dhoti”, “silk”, “crepe”, or a colour like “ivory”.</p>
                   <button className="text-link" onClick={() => setQuery("")}>
                     Explore all pieces <Icon name="arrow" size={18} />
                   </button>
@@ -851,7 +1192,7 @@ function App() {
                       e.preventDefault()
                       const values = new FormData(e.currentTarget)
                       download(
-                        `RJ SONS — Custom saree brief\n\n${Array.from(
+                        `RJ SONS — Custom design brief\n\n${Array.from(
                           values.entries(),
                         )
                           .map(([key, value]) => `${key}: ${value}`)
@@ -882,6 +1223,18 @@ function App() {
                       />
                     </label>
                     <label>
+                      Your garment
+                      <select
+                        name="Garment"
+                        value={briefGarment}
+                        onChange={(e) => setBriefGarment(e.target.value)}
+                      >
+                        <option>Saree</option>
+                        <option>Dhoti</option>
+                        <option>Sarees &amp; dhotis</option>
+                      </select>
+                    </label>
+                    <label>
                       Your fabric
                       <select name="Fabric" defaultValue="Pure silk">
                         <option>Pure silk</option>
@@ -889,6 +1242,7 @@ function App() {
                         <option>Heavy chiffon</option>
                         <option>Satin</option>
                         <option>Georgette</option>
+                        <option>Dhoti fabric — discuss options</option>
                         <option>Help me choose</option>
                       </select>
                     </label>
@@ -911,7 +1265,7 @@ function App() {
                       />
                     </label>
                     <label>
-                      Number of sarees
+                      Number of pieces
                       <input
                         type="number"
                         name="Quantity"
