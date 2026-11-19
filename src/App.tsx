@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import FabricStudio from "./FabricStudio"
 import useShowcaseMotion from "./useShowcaseMotion"
+import ReferenceHero from "./ReferenceHero"
+import ColourGallery from "./ColourGallery"
 
 type IconName = "arrow" | "search" | "close" | "menu" | "plus" | "check" | "thread" | "diamond" | "flower"
 interface IconProps {
@@ -70,7 +72,7 @@ const imageFiles: Record<string, string> = {
 }
 const photo = (id: string) => `/images/${imageFiles[id]}.jpg`
 const heroImage = photo("photo-1610030469983-98e550d6193c")
-type Category = "All collections" | "Pure silk" | "Crepe" | "Plain & timeless" | "Dhotis"
+type Category = "All collections" | "Pure silk" | "Crepe" | "Plain & timeless" | "Dhotis" | "Festive sarees"
 type Product = {
   id: number
   name: string
@@ -158,7 +160,79 @@ const products: Product[] = [
     tag: "PATTERNS WITH PERSONALITY",
     swatches: ["#bb7185", "#e3bc88", "#78815c"],
   },
+  {
+    id: 9,
+    name: "The Temple Gold Dhoti",
+    category: "Dhotis",
+    color: "Ivory · Gold border",
+    image: "/images/dhoti-gold.jpg",
+    tag: "GOLD-BORDER CLASSICS",
+    swatches: ["#ece4ce", "#b08c40", "#c9b782"],
+    description:
+      "An ivory canvas, framed by a gold-toned border. Explore this traditional direction for poojas, family celebrations, and a quietly refined festive wardrobe. Discuss fabric feel, dimensions, and border width with the makers.",
+  },
+  {
+    id: 10,
+    name: "The Wedding Veshti",
+    category: "Dhotis",
+    color: "Warm ivory · Broad gold",
+    image: "/images/dhoti-cotton.jpg",
+    tag: "SILK & CEREMONY",
+    swatches: ["#eee6d2", "#b08c40", "#90713c"],
+    description:
+      "A ceremonial design direction with a generous gold border. Enquire about silk and silk-blend fabric possibilities, a matching angavastram, and coordinated requirements for your celebration. Photography illustrates the border style, not a verified fabric composition.",
+  },
+  {
+    id: 11,
+    name: "The Colour-Border Dhoti",
+    category: "Dhotis",
+    color: "White · A spectrum of borders",
+    image: "/images/dhoti-colour.jpg",
+    tag: "A PERSONAL TOUCH",
+    swatches: ["#33587b", "#773b43", "#385e46"],
+    description:
+      "The familiar white dhoti, with a border that changes the story. Explore green, blue, wine, pink, and gold-accented edges. A versatile direction for personal designs and coordinated retail assortments.",
+  },
+  {
+    id: 12,
+    name: "The Cotton Classic",
+    category: "Dhotis",
+    color: "Soft white · Everyday borders",
+    image: "/images/dhoti-ceremony.jpg",
+    tag: "EVERYDAY COTTON",
+    swatches: ["#eee8dd", "#c18c9b", "#33584d"],
+    description:
+      "A lightweight, everyday design direction built around comfort and simplicity. Discuss cotton fabric options, the drape you prefer, and a simple or colourful border. Final composition and finish are confirmed during consultation.",
+  },
+  {
+    id: 13,
+    name: "The Crimson Celebration",
+    category: "Festive sarees",
+    color: "Crimson · Antique gold",
+    image: "/images/crimson.jpg",
+    tag: "THE CELEBRATION COLLECTION",
+    swatches: ["#942834", "#be9956", "#612c3b"],
+    description:
+      "A rich red palette and ornate detail for memorable occasions. Explore festive patterns, metallic-inspired borders, and a statement drape tailored to your celebration.",
+  },
+  {
+    id: 14,
+    name: "The Scarlet Story",
+    category: "Festive sarees",
+    color: "Scarlet · Sunlit gold",
+    image: "/images/festive-red.jpg",
+    tag: "OCCASIONS TO REMEMBER",
+    swatches: ["#aa2836", "#c19d52", "#e7c298"],
+  },
 ]
+const colourGroups: Record<string, number[]> = {
+  Wine: [1, 13, 14],
+  Green: [4, 5, 6, 11],
+  Gold: [2, 9, 10],
+  Blue: [3, 11],
+  Pink: [7, 8, 11, 12],
+  Ivory: [4, 5, 6, 9, 10, 11, 12],
+}
 const categories: {
   name: Category
   title: string
@@ -167,7 +241,7 @@ const categories: {
 }[] = [
   {
     name: "Pure silk",
-    title: "The silk edit",
+    title: "Silk sarees",
     subtitle: "A little heritage. A lot of heart.",
     image: photo("photo-1705164454907-a04fe248f675"),
   },
@@ -189,6 +263,12 @@ const categories: {
     subtitle: "Heritage, in its purest form.",
     image: "/images/dhoti-everyday.jpg",
   },
+  {
+    name: "Festive sarees",
+    title: "A celebration in silk",
+    subtitle: "For moments that become memories.",
+    image: "/images/crimson.jpg",
+  },
 ]
 type Panel = "search" | "custom" | null
 
@@ -202,7 +282,7 @@ function Brand({ footer = false }: { footer?: boolean }) {
       <span>
         RJ SONS<span className="brand-dot">.</span>
       </span>
-      <small>THE ART OF THE SAREE</small>
+      <small>THE ART OF THE DRAPE</small>
     </a>
   )
 }
@@ -290,6 +370,7 @@ function App() {
   const [zoomed, setZoomed] = useState(false)
   const [briefGarment, setBriefGarment] = useState("Saree")
   const [ribbonPaused, setRibbonPaused] = useState(false)
+  const [colour, setColour] = useState("")
   const closeRef = useRef(() => {
     setPanel(null)
     setSelected(null)
@@ -297,10 +378,12 @@ function App() {
   })
   const close = closeRef.current
   const filtered = products.filter(
-    (p) => category === "All collections" || p.category === category,
+    (p) =>
+      (category === "All collections" || p.category === category) &&
+      (!colour || colourGroups[colour]?.includes(p.id)),
   )
   const searchResults = products.filter((p) =>
-    `${p.name} ${p.category} ${p.color}`
+    `${p.name} ${p.category} ${p.color} ${p.tag} ${p.description || ""}`
       .toLowerCase()
       .includes(query.toLowerCase()),
   )
@@ -324,6 +407,7 @@ function App() {
   }, [selected])
   const explore = (value: Category) => {
     setCategory(value)
+    setColour("")
     setMenuOpen(false)
     document.getElementById("favourites")?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -399,70 +483,7 @@ function App() {
       </header>
 
       <main>
-        <section className="hero" id="home">
-          <div className="hero-copy">
-            <div className="hero-copy-inner">
-              <div className="eyebrow">
-                <span className="short-line" /> WOVEN WITH LOVE. WORN WITH
-                PRIDE.
-              </div>
-              <h1>
-                Every thread,
-                <br />a timeless
-                <br />
-                <em>story.</em>
-              </h1>
-              <p>
-                Exquisite sarees. Timeless dhotis. Endless possibilities.
-                <br className="desktop-break" /> Sarees made to be a part of
-                your story.
-              </p>
-              <a className="button button--wine" href="#collections">
-                Find your perfect drape <Icon name="arrow" size={19} />
-              </a>
-              <a className="hero-secondary" href="#custom">
-                A saree as unique as you <span>↗</span>
-              </a>
-              <div className="hero-note">
-                <Icon name="flower" size={25} />
-                <span>From our looms to your most beautiful moments.</span>
-              </div>
-            </div>
-            <span className="hero-watermark" aria-hidden="true">
-              R
-            </span>
-          </div>
-          <div className="hero-visual">
-            <img
-              src={heroImage}
-              alt="Woman in an aubergine silk saree with an intricate gold border against a rich red backdrop"
-              fetchPriority="high"
-            />
-            <div className="hero-photo-shade" />
-            <div className="hero-edition">
-              THE SIGNATURE COLLECTION<span>Tradition, reimagined.</span>
-            </div>
-            <div className="hero-photo-bottom">
-              <span>
-                THE GULMOHAR SILK
-                <br />
-                <small>Aubergine &amp; antique gold</small>
-              </span>
-              <button
-                className="photo-link"
-                aria-label="View the Gulmohar Silk saree"
-                onClick={() => setSelected(products[0])}
-              >
-                <Icon name="arrow" />
-              </button>
-            </div>
-            <div className="image-counter">
-              <span>01</span>
-              <i />
-              <span>THE SILK EDIT</span>
-            </div>
-          </div>
-        </section>
+        <ReferenceHero />
 
         <div className="promises">
           <div>
@@ -529,7 +550,10 @@ function App() {
             <a
               className="text-link"
               href="#favourites"
-              onClick={() => setCategory("All collections")}
+              onClick={() => {
+                setCategory("All collections")
+                setColour("")
+              }}
             >
               Explore all collections <Icon name="arrow" size={18} />
             </a>
@@ -546,7 +570,7 @@ function App() {
                   alt={
                     item.name === "Dhotis"
                       ? "Man wearing a traditional white dhoti with a green border"
-                      : `Woman wearing a saree from our ${item.name.toLowerCase()} inspiration edit`
+                      : `Woman wearing a saree from our ${item.name.toLowerCase()} inspiration collection`
                   }
                   loading="lazy"
                 />
@@ -567,6 +591,19 @@ function App() {
             ))}
           </div>
         </section>
+
+        <ColourGallery
+          onChoose={(name) => {
+            setColour(name)
+            setCategory("All collections")
+            document.getElementById("favourites")?.scrollIntoView({
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                .matches
+                ? "instant"
+                : "smooth",
+            })
+          }}
+        />
 
         <section
           className="dhoti-feature"
@@ -629,7 +666,8 @@ function App() {
             />
             <span className="dhoti-portrait-label">
               <span>
-                THE HERITAGE EDIT<small>Simple. Rooted. Remarkable.</small>
+                THE HERITAGE COLLECTION
+                <small>Simple. Rooted. Remarkable.</small>
               </span>
               <span className="round-arrow">
                 <Icon name="arrow" />
@@ -639,6 +677,82 @@ function App() {
           <span className="dhoti-watermark" aria-hidden="true">
             Heritage
           </span>
+        </section>
+
+        <section
+          className="dhoti-directions section"
+          aria-labelledby="dhoti-directions-title"
+        >
+          <div className="section-heading reveal">
+            <div>
+              <span className="eyebrow">ONE TRADITION. MANY EXPRESSIONS.</span>
+              <h2 id="dhoti-directions-title">
+                The many sides
+                <br />
+                of a <em>timeless dhoti.</em>
+              </h2>
+            </div>
+            <p className="craft-intro">
+              Not all dhotis tell the same story. Explore a design direction,
+              then make the fabric, border, and finish your own.
+            </p>
+          </div>
+          <div className="dhoti-directions-grid">
+            {[
+              {
+                id: 12,
+                title: "Everyday cotton",
+                subtitle: "Comfort in the everyday.",
+                image: "/images/dhoti-ceremony.jpg",
+              },
+              {
+                id: 9,
+                title: "The gold-border classic",
+                subtitle: "A little tradition. A golden edge.",
+                image: "/images/dhoti-gold.jpg",
+              },
+              {
+                id: 10,
+                title: "Silk & ceremony",
+                subtitle: "For your most meaningful moments.",
+                image: "/images/dhoti-cotton.jpg",
+              },
+              {
+                id: 11,
+                title: "A border of colour",
+                subtitle: "Small details. A personal statement.",
+                image: "/images/dhoti-colour.jpg",
+              },
+            ].map((item, index) => (
+              <button
+                className="dhoti-direction reveal"
+                key={item.id}
+                onClick={() =>
+                  setSelected(products.find((p) => p.id === item.id)!)
+                }
+              >
+                <span className="direction-image">
+                  <img
+                    src={item.image}
+                    alt={`${item.title} dhoti design inspiration`}
+                    loading="lazy"
+                  />
+                  <span className="direction-arrow">
+                    <Icon name="arrow" />
+                  </span>
+                </span>
+                <span className="direction-number">
+                  0{index + 1} / THE DHOTI ATELIER
+                </span>
+                <strong>{item.title}</strong>
+                <small>{item.subtitle}</small>
+              </button>
+            ))}
+          </div>
+          <p className="collection-footnote">
+            Design directions, not fixed listings. Fabric composition, border
+            details, and dimensions are discussed and confirmed with RJ SONS.
+          </p>
         </section>
 
         <section className="section favourites" id="favourites">
@@ -660,19 +774,34 @@ function App() {
               "Crepe",
               "Plain & timeless",
               "Dhotis",
+              "Festive sarees",
             ] as Category[]).map((item) => (
               <button
                 key={item}
                 className={category === item ? "active" : ""}
                 aria-pressed={category === item}
-                onClick={() => setCategory(item)}
+                onClick={() => {
+                  setCategory(item)
+                  setColour("")
+                }}
               >
                 {item}
               </button>
             ))}
             <span>{filtered.length} pieces to fall for</span>
           </div>
-          <div className="product-grid" key={category}>
+          {colour && (
+            <div className="colour-filter-note" role="status">
+              <span>
+                THE {colour.toUpperCase()} COLOUR STORY · {filtered.length}{" "}
+                designs
+              </span>
+              <button onClick={() => setColour("")}>
+                Clear colour <Icon name="close" size={14} />
+              </button>
+            </div>
+          )}
+          <div className="product-grid" key={`${category}-${colour}`}>
             {filtered.map((p) => (
               <article className="product-card" key={p.id}>
                 <div className="product-image">
@@ -826,6 +955,71 @@ function App() {
           </div>
         </section>
 
+        <section
+          className="service-world section"
+          aria-labelledby="service-title"
+        >
+          <div className="section-heading reveal">
+            <div>
+              <span className="eyebrow">
+                MORE THAN A COLLECTION. A COLLABORATION.
+              </span>
+              <h2 id="service-title">
+                From your first idea
+                <br />
+                to the <em>finishing touch.</em>
+              </h2>
+            </div>
+            <a className="text-link" href="#custom">
+              Talk through your requirements <Icon name="arrow" size={18} />
+            </a>
+          </div>
+          <div className="service-world-grid">
+            {[
+              [
+                "01",
+                "Something personal",
+                "A saree or dhoti for a celebration, a gift, or simply yourself. Explore fabric, colour, pattern, and border combinations that feel right for you.",
+                "INDIVIDUAL DESIGNS",
+              ],
+              [
+                "02",
+                "Made for your store",
+                "Share your customer preferences, category mix, required quantities, and timeline. We can discuss a manufacturing direction around your retail needs.",
+                "RETAIL & BULK ENQUIRIES",
+              ],
+              [
+                "03",
+                "Better together",
+                "Coordinated saree and dhoti palettes for family occasions and ceremonies. Bring a reference, a colour, or a story—we’ll start the design conversation.",
+                "CELEBRATIONS & COORDINATES",
+              ],
+            ].map(([number, title, text, label]) => (
+              <article className="service-world-card reveal" key={number}>
+                <span>
+                  {number}
+                  <Icon
+                    name={
+                      number === "01"
+                        ? "flower"
+                        : number === "02"
+                          ? "thread"
+                          : "diamond"
+                    }
+                    size={28}
+                  />
+                </span>
+                <small>{label}</small>
+                <h3>{title}</h3>
+                <p>{text}</p>
+                <a href="#custom" aria-label={`Discuss ${title.toLowerCase()}`}>
+                  <Icon name="arrow" size={20} />
+                </a>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="custom-section" id="custom">
           <div className="custom-image">
             <img
@@ -917,13 +1111,67 @@ function App() {
           </div>
         </section>
 
+        <section
+          className="questions-section section"
+          aria-labelledby="questions-title"
+        >
+          <div className="questions-intro reveal">
+            <span className="eyebrow">A LITTLE CLARITY, BEFORE WE BEGIN</span>
+            <h2 id="questions-title">
+              Good questions.
+              <br />
+              <em>Thoughtful answers.</em>
+            </h2>
+            <p>
+              Every drape starts with a conversation. Here are a few useful
+              places to begin.
+            </p>
+            <a href="#custom" className="text-link">
+              Share your design idea <Icon name="arrow" size={18} />
+            </a>
+          </div>
+          <div className="questions-list">
+            {[
+              [
+                "What does RJ SONS manufacture?",
+                "Our showcase covers silk sarees, crepe, plain and patterned saree directions, and traditional dhotis. We also discuss chiffon, satin, georgette, and custom fabric and design requirements.",
+              ],
+              [
+                "Which dhoti styles can I enquire about?",
+                "Explore everyday cotton directions, classic white and ivory, gold borders, colour borders, and silk or ceremonial options. Share the fabric feel, dimensions, and border style you prefer; final specifications are confirmed directly with the makers.",
+              ],
+              [
+                "Can I customise colours and borders?",
+                "Yes—customisation is part of the design conversation. Tell us your preferred palette, pattern, border width, and occasion. Reference photographs are welcome as inspiration; feasibility is discussed before a design is finalised.",
+              ],
+              [
+                "Do you work with retailers and bulk requirements?",
+                "Retail and manufacturing enquiries are welcome. Please share the categories you need, approximate quantity, colour assortment, and intended timeline so the requirements can be discussed clearly.",
+              ],
+              [
+                "How do I begin an enquiry?",
+                "Use the design-brief form to organise your requirements and download a file to share directly with RJ SONS. The website is a service showcase, not an online store, and the brief is not automatically sent or stored.",
+              ],
+            ].map(([question, answer], index) => (
+              <details className="question-item" key={question}>
+                <summary>
+                  <span>0{index + 1}</span>
+                  <h3>{question}</h3>
+                  <Icon name="plus" size={18} />
+                </summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
         <section className="closing-banner">
           <span className="eyebrow">SOME STORIES ARE MEANT TO BE WORN.</span>
           <h2>
             Make the next one <em>yours.</em>
           </h2>
           <a className="button button--ivory" href="#collections">
-            Discover your saree <Icon name="arrow" size={18} />
+            Explore the collections <Icon name="arrow" size={18} />
           </a>
           <span className="banner-flower" aria-hidden="true">
             <Icon name="flower" size={280} />
@@ -997,7 +1245,8 @@ function App() {
         <Modal title="A closer look" close={close} wide>
           <div className="preview-controls">
             <span>
-              THE {selected.category === "Dhotis" ? "DHOTI" : "SAREE"} EDIT ·{" "}
+              THE {selected.category === "Dhotis" ? "DHOTI" : "SAREE"}{" "}
+              COLLECTION ·{" "}
               {String(products.indexOf(selected) + 1).padStart(2, "0")} /{" "}
               {String(products.length).padStart(2, "0")}
             </span>
